@@ -2,6 +2,7 @@ import './style.css';
 
 const STORAGE_KEY = 'petari-sticky-board-v2';
 const LEGACY_STORAGE_KEY = 'petari-sticky-notes-v1';
+const THEME_STORAGE_KEY = 'petari-theme';
 const COLORS = [
   { key: 'yellow', label: 'イエロー', value: '#f4cf58' },
   { key: 'pink', label: 'ピンク', value: '#f4a9bc' },
@@ -23,6 +24,7 @@ const createProjectButton = document.querySelector('#createProject');
 const renameProjectButton = document.querySelector('#renameProject');
 const deleteProjectButton = document.querySelector('#deleteProject');
 const arrangeButton = document.querySelector('#arrangeNotes');
+const themeButton = document.querySelector('#themeToggle');
 
 const initialState = loadState();
 let notes = initialState.notes;
@@ -31,6 +33,20 @@ let activeProjectId = initialState.activeProjectId;
 let activeFilter = 'incomplete';
 let topZ = notes.reduce((max, note) => Math.max(max, note.z || 1), 1);
 let saveTimer;
+
+function getInitialTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const isDark = theme === 'dark';
+  themeButton.querySelector('span:first-child').textContent = isDark ? '☀' : '☾';
+  themeButton.querySelector('span:last-child').textContent = isDark ? 'ライト' : 'ダーク';
+  themeButton.setAttribute('aria-label', isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え');
+}
 
 function makeId() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -374,6 +390,11 @@ document.addEventListener('keydown', event => {
 });
 searchInput.addEventListener('input', applySearch);
 arrangeButton.addEventListener('click', arrangeNotes);
+themeButton.addEventListener('click', () => {
+  const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  setTheme(nextTheme);
+  localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+});
 filterTabs.addEventListener('click', event => {
   const button = event.target.closest('[data-filter]');
   if (!button) return;
@@ -423,4 +444,5 @@ window.addEventListener('resize', () => {
   });
 });
 
+setTheme(getInitialTheme());
 render();
